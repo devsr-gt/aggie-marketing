@@ -1,0 +1,23 @@
+{
+  "name": "aggie-marketing-app",
+  "version": "1.0.0",
+  "description": "Client onboarding tool for Aggie Marketing — local use only",
+  "main": "server.js",
+  "type": "module",
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "release:patch": "cd .. && ./scripts/version-and-push.sh patch",
+    "release:minor": "cd .. && ./scripts/version-and-push.sh minor",
+    "release:major": "cd .. && ./scripts/version-and-push.sh major",
+    "security:check": "cd .. && ./scripts/security-check.sh"
+  },
+  "dependencies": {
+    "cheerio": "^1.0.0",
+    "express": "^5.0.0",
+    "helmet": "^8.0.0"
+  }
+}

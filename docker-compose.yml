@@ -1,0 +1,34 @@
+services:
+  app:
+    build:
+      context: ./app        # build from the app/ subdirectory (where Dockerfile lives)
+    image: aggie-marketing-app
+    container_name: aggie-marketing
+
+    # Only expose on localhost — invisible to your Wi-Fi/LAN
+    ports:
+      - "127.0.0.1:3000:3000"
+
+    # Mount only the folders the app actually needs.
+    # 'ro' = read-only inside the container. categories/ and _templates/ are never written to.
+    volumes:
+      - ./clients:/workspace/clients        # writable — new client folders land here
+      - ./categories:/workspace/categories:ro
+      - ./_templates:/workspace/_templates:ro
+
+    # Hard resource limits — the container cannot eat your whole machine
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"       # half a CPU core at most
+          memory: 256M      # 256 MB RAM at most
+
+    # Restart only on failure, never automatically on reboot
+    restart: on-failure
+
+    # Tell Docker the app is healthy by hitting the server
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/api/clients"]
+      interval: 30s
+      timeout: 5s
+      retries: 3

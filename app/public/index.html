@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Aggie Marketing — Client Onboarding</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <header>
+    <div class="header-inner">
+      <div class="logo">Aggie Marketing</div>
+      <div class="tagline">Client Onboarding Tool</div>
+    </div>
+  </header>
+
+  <main>
+
+    <!-- ── Step 1: Scrape ────────────────────────────────────────── -->
+    <section id="step-scrape" class="card step active">
+      <div class="step-label">Step 1</div>
+      <h2>Enter a Business Website</h2>
+      <p class="hint">
+        Paste the client's website URL below. The tool will scan the page and pull
+        their business name, contact info, social links, and more — so you don't
+        have to fill it all in manually.
+      </p>
+
+      <form id="scrape-form">
+        <div class="input-row">
+          <input
+            id="url-input"
+            type="url"
+            placeholder="https://example-business.com"
+            autocomplete="off"
+            spellcheck="false"
+            required
+          />
+          <button type="submit" id="scrape-btn">Scan Website</button>
+        </div>
+        <div id="scrape-error" class="error-msg hidden"></div>
+      </form>
+
+      <div id="existing-clients-wrap" class="existing-clients">
+        <h3>Existing Clients</h3>
+        <ul id="clients-list"><li class="muted">Loading...</li></ul>
+      </div>
+    </section>
+
+    <!-- ── Step 2: Review ────────────────────────────────────────── -->
+    <section id="step-review" class="card step hidden">
+      <div class="step-label">Step 2</div>
+      <h2>Review & Confirm</h2>
+      <p class="hint">
+        Here's what we found. Edit any field before creating the client folder.
+        Everything here gets written into their onboarding, brand, and strategy docs.
+      </p>
+
+      <form id="review-form">
+        <div class="fields-grid">
+
+          <div class="field">
+            <label for="f-name">Business Name</label>
+            <input id="f-name" type="text" name="businessName" required />
+          </div>
+
+          <div class="field">
+            <label for="f-category">Category</label>
+            <select id="f-category" name="category">
+              <option value="restaurant">Restaurant &amp; Food</option>
+              <option value="retail">Retail</option>
+              <option value="health-wellness">Health &amp; Wellness</option>
+              <option value="contractors">Contractors &amp; Trades</option>
+              <option value="real-estate">Real Estate</option>
+              <option value="general">General / Other</option>
+            </select>
+          </div>
+
+          <div class="field full">
+            <label for="f-description">Business Description</label>
+            <textarea id="f-description" name="description" rows="3"></textarea>
+          </div>
+
+          <div class="field">
+            <label for="f-phone">Phone</label>
+            <input id="f-phone" type="text" name="phone" />
+          </div>
+
+          <div class="field">
+            <label for="f-email">Email</label>
+            <input id="f-email" type="email" name="email" />
+          </div>
+
+          <div class="field full">
+            <label for="f-address">Address</label>
+            <input id="f-address" type="text" name="address" />
+          </div>
+
+          <div class="field">
+            <label for="f-instagram">Instagram URL</label>
+            <input id="f-instagram" type="url" name="instagram" />
+          </div>
+
+          <div class="field">
+            <label for="f-facebook">Facebook URL</label>
+            <input id="f-facebook" type="url" name="facebook" />
+          </div>
+
+          <div class="field">
+            <label for="f-tiktok">TikTok URL</label>
+            <input id="f-tiktok" type="url" name="tiktok" />
+          </div>
+
+          <div class="field">
+            <label for="f-url">Website URL</label>
+            <input id="f-url" type="url" name="url" />
+          </div>
+
+        </div>
+
+        <div id="folder-preview" class="folder-preview">
+          Folder will be created as: <code id="folder-name-preview">—</code>
+        </div>
+
+        <div id="generate-error" class="error-msg hidden"></div>
+
+        <div class="button-row">
+          <button type="button" id="back-btn" class="secondary">← Back</button>
+          <button type="submit" id="generate-btn">Create Client Folder</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- ── Step 3: Done ──────────────────────────────────────────── -->
+    <section id="step-done" class="card step hidden">
+      <div class="step-label">Step 3</div>
+      <h2>Client Folder Created</h2>
+      <div id="done-message" class="done-message"></div>
+      <div class="next-steps">
+        <h3>What to do next</h3>
+        <ol>
+          <li>Open <code id="done-folder-path">clients/folder-name/</code> in VS Code</li>
+          <li>Work through the folders in order: <strong>00 → 01 → 02 → 03</strong></li>
+          <li>Send the client the onboarding questionnaire</li>
+          <li>Book the discovery call</li>
+        </ol>
+      </div>
+      <button type="button" id="restart-btn">Add Another Client</button>
+    </section>
+
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

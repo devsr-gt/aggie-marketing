@@ -1,0 +1,12 @@
+# Node.js
+app/node_modules/
+npm-debug.log*
+
+# macOS
+.DS_Store
+
+# Security logs (daily output — generated at runtime, not stored in git)
+logs/security/*.log
+
+# Keep the directory itself
+!logs/security/.gitkeep
