@@ -29,13 +29,13 @@
 ---
 
 ## Pre-filled from Website Scan
-*Scraped 2026-04-15T20:02:29.058Z — verify all details with the client*
+*Scraped 2026-04-15T20:10:57.060Z — verify all details with the client*
 
 - **Website:** https://rileyplumbingheatingandair.com/
 - **Phone:** 7752938855
 - **Email:** service@rileypha.com
 - **Address:** —
-- **Detected Category:** contractors
+- **Detected Category:** retail
 
 ### Social Media Found
 - **Instagram:** https://www.instagram.com/rileyplumbingheatingair/
