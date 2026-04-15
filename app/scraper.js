@@ -155,7 +155,7 @@ export async function scrapeWebsite(rawUrl) {
 
   // Guess business category from page content
   const pageText = ($('body').text() || '').toLowerCase();
-  const category = guessCategory(pageText, description.toLowerCase());
+  const category = guessCategory(pageText, description.toLowerCase(), safeUrl);
 
   return {
     url: safeUrl,
@@ -171,22 +171,98 @@ export async function scrapeWebsite(rawUrl) {
 }
 
 /**
- * Heuristic category detection based on common keywords.
+ * Heuristic category detection based on URL and common keywords.
+ * Checks the URL first (most reliable signal), then falls back to
+ * keyword scoring against the page body + description.
  */
-function guessCategory(bodyText, description) {
+function guessCategory(bodyText, description, url) {
+  // ── URL-based check first — very reliable ─────────────────────────────
+  const urlLower = (url || '').toLowerCase();
+  if (/plumb|hvac|heat(?:ing)?|cool(?:ing)?|furnace|electrician|roofi|landscap|construct|contract/.test(urlLower)) return 'contractors';
+  if (/real.?estate|realtor|\.realty/.test(urlLower)) return 'real-estate';
+  if (/gym|yoga|wellness|fitness|spa|massage|chiro|therapy/.test(urlLower)) return 'health-wellness';
+  if (/restaurant|cafe|bistro|diner|pizz|sushi|taco|burger/.test(urlLower)) return 'restaurant';
+
+  // ── Keyword scoring fallback ───────────────────────────────────────────
+  const combined = bodyText + ' ' + description;
   const checks = [
-    { category: 'restaurant', keywords: ['menu', 'reservation', 'dining', 'restaurant', 'cafe', 'food', 'eat', 'chef', 'cuisine'] },
-    { category: 'retail', keywords: ['shop', 'store', 'boutique', 'buy', 'cart', 'collection', 'product'] },
-    { category: 'health-wellness', keywords: ['gym', 'fitness', 'yoga', 'wellness', 'massage', 'therapy', 'health', 'workout'] },
-    { category: 'real-estate', keywords: ['listing', 'realtor', 'property', 'homes for sale', 'real estate', 'mortgage'] },
-    { category: 'contractors', keywords: ['contractor', 'roofing', 'plumbing', 'hvac', 'electrician', 'remodel', 'construction', 'landscaping'] },
+    {
+      category: 'contractors',
+      // Weighted: specific trade words count 3x
+      keywords: [
+        { word: 'plumbing',       weight: 3 },
+        { word: 'hvac',           weight: 3 },
+        { word: 'heating',        weight: 3 },
+        { word: 'cooling',        weight: 3 },
+        { word: 'furnace',        weight: 3 },
+        { word: 'water heater',   weight: 3 },
+        { word: 'air conditioning', weight: 3 },
+        { word: 'electrician',    weight: 3 },
+        { word: 'roofing',        weight: 3 },
+        { word: 'contractor',     weight: 2 },
+        { word: 'construction',   weight: 2 },
+        { word: 'remodel',        weight: 2 },
+        { word: 'landscaping',    weight: 2 },
+        { word: 'estimate',       weight: 1 },
+        { word: 'licensed',       weight: 1 },
+      ],
+    },
+    {
+      category: 'restaurant',
+      keywords: [
+        { word: 'menu',        weight: 3 },
+        { word: 'reservation', weight: 3 },
+        { word: 'dining',      weight: 2 },
+        { word: 'restaurant',  weight: 3 },
+        { word: 'cafe',        weight: 3 },
+        { word: 'cuisine',     weight: 2 },
+        { word: 'chef',        weight: 2 },
+        { word: 'food',        weight: 1 },
+        { word: 'eat',         weight: 1 },
+      ],
+    },
+    {
+      category: 'health-wellness',
+      keywords: [
+        { word: 'gym',       weight: 3 },
+        { word: 'fitness',   weight: 3 },
+        { word: 'yoga',      weight: 3 },
+        { word: 'wellness',  weight: 2 },
+        { word: 'massage',   weight: 3 },
+        { word: 'therapy',   weight: 2 },
+        { word: 'workout',   weight: 2 },
+        { word: 'health',    weight: 1 },
+      ],
+    },
+    {
+      category: 'real-estate',
+      keywords: [
+        { word: 'listing',       weight: 3 },
+        { word: 'realtor',       weight: 3 },
+        { word: 'homes for sale', weight: 3 },
+        { word: 'real estate',   weight: 3 },
+        { word: 'mortgage',      weight: 2 },
+        { word: 'property',      weight: 1 },
+      ],
+    },
+    {
+      category: 'retail',
+      keywords: [
+        { word: 'boutique',    weight: 3 },
+        { word: 'collection',  weight: 2 },
+        { word: 'add to cart', weight: 3 },
+        { word: 'shop now',    weight: 2 },
+        { word: 'store',       weight: 1 },
+      ],
+    },
   ];
 
-  const combined = bodyText + ' ' + description;
   let best = { category: 'general', score: 0 };
-
   for (const { category, keywords } of checks) {
-    const score = keywords.reduce((acc, kw) => acc + (combined.includes(kw) ? 1 : 0), 0);
+    const score = keywords.reduce(
+      (acc, { word, weight }) => acc + (combined.includes(word) ? weight : 0),
+      0
+    );
     if (score > best.score) best = { category, score };
   }
 

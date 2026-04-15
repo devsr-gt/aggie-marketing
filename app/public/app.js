@@ -203,11 +203,43 @@ reviewForm.addEventListener('submit', async (e) => {
       return;
     }
 
-    // Success
-    doneMessage.textContent = `"${updatedData.businessName}" has been set up and is ready to work with.`;
-    doneFolderPath.textContent = `clients/${json.folderName}/`;
+    // Success — populate rich Step 3
+    const r = json;
+    doneMessage.textContent = `"${r.businessName}" is set up and ready to work with.`;
+    doneFolderPath.textContent = `clients/${r.folderName}/`;
+
+    // Overview strip
+    const overview = document.getElementById('done-overview');
+    overview.innerHTML = [
+      r.phone    && `<span>📞 ${r.phone}</span>`,
+      r.email    && `<span>✉️ ${r.email}</span>`,
+      r.url      && `<span><a href="${r.url}" target="_blank" rel="noopener">${r.url.replace(/^https?:\/\//, '')}</a></span>`,
+      r.category && `<span class="badge">${r.category}</span>`,
+      r.socialLinks?.instagram && `<span><a href="${r.socialLinks.instagram}" target="_blank" rel="noopener">Instagram</a></span>`,
+      r.socialLinks?.facebook  && `<span><a href="${r.socialLinks.facebook}"  target="_blank" rel="noopener">Facebook</a></span>`,
+    ].filter(Boolean).join('');
+
+    // Content cards
+    const cards = document.getElementById('done-content');
+    cards.innerHTML = '';
+
+    function makeCard(title, items, cls = '') {
+      if (!items || items.length === 0) return '';
+      const listItems = items.map(item =>
+        `<li>${item} <button class="copy-btn" title="Copy" onclick="navigator.clipboard.writeText(${JSON.stringify(item)})">Copy</button></li>`
+      ).join('');
+      return `<div class="content-card ${cls}"><h4>${title}</h4><ul>${listItems}</ul></div>`;
+    }
+
+    cards.innerHTML = [
+      makeCard('🎯 Hook Library', r.playbook?.hooks, 'card-hooks'),
+      makeCard('📣 CTA Bank', r.playbook?.ctas, 'card-ctas'),
+      makeCard('✅ What Works for This Category', r.playbook?.whatWorks, 'card-what'),
+      makeCard('💰 Conversion Content', r.playbook?.conversion, 'card-conversion'),
+    ].filter(Boolean).join('');
+
     showStep(stepDone);
-    loadClients(); // refresh the client list for next time
+    loadClients();
 
   } catch {
     showError(generateError, 'Could not reach the server.');

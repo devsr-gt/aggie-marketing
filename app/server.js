@@ -13,6 +13,7 @@
 
 import express from 'express';
 import helmet from 'helmet';
+import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { scrapeWebsite } from './scraper.js';
@@ -91,6 +92,20 @@ app.post('/api/scrape', async (req, res) => {
 });
 
 /**
+ * Parses bullet-list items from a markdown section.
+ * e.g. "## Hook Ideas\n- \"text\"\n- \"text2\"" → ["text", "text2"]
+ */
+function parseSection(markdown, heading) {
+  const re = new RegExp(`## ${heading}[\\s\\S]*?\n((?:- [^\n]+\n?)+)`);
+  const match = markdown.match(re);
+  if (!match) return [];
+  return match[1]
+    .split('\n')
+    .filter(l => l.startsWith('- '))
+    .map(l => l.replace(/^- /, '').replace(/^"|"$/g, '').trim());
+}
+
+/**
  * POST /api/generate
  * Body: { scraped: object }  (the object returned from /api/scrape)
  * Creates the client folder and pre-fills all docs.
@@ -109,10 +124,32 @@ app.post('/api/generate', async (req, res) => {
 
   try {
     const result = await generateClientFolder(scraped);
+
+    // Read category playbook and extract actionable sections
+    const CATS_DIR = path.join(__dirname, '..', 'categories');
+    let playbook = { hooks: [], ctas: [], whatWorks: [], conversion: [] };
+    try {
+      const playbookText = await fs.readFile(
+        path.join(CATS_DIR, scraped.category, 'README.md'), 'utf8'
+      );
+      playbook = {
+        hooks:      parseSection(playbookText, 'Hook Ideas'),
+        ctas:       parseSection(playbookText, 'CTA Ideas'),
+        whatWorks:  parseSection(playbookText, 'What Works in This Category'),
+        conversion: parseSection(playbookText, 'Conversion Content That Works'),
+      };
+    } catch { /* no playbook for this category — return empty */ }
+
     res.json({
       success: true,
-      folderName: result.folderName,
-      message: `Client folder "${result.folderName}" created successfully`,
+      folderName:   result.folderName,
+      businessName: scraped.businessName,
+      category:     scraped.category,
+      phone:        scraped.phone  || '',
+      email:        scraped.email  || '',
+      url:          scraped.url    || '',
+      socialLinks:  scraped.socialLinks || {},
+      playbook,
     });
   } catch (err) {
     console.error('[/api/generate]', err.message);
