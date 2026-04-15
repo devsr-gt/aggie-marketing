@@ -4,9 +4,10 @@
  */
 
 // ── Element refs ─────────────────────────────────────────
-const stepScrape   = document.getElementById('step-scrape');
-const stepReview   = document.getElementById('step-review');
-const stepDone     = document.getElementById('step-done');
+const stepScrape     = document.getElementById('step-scrape');
+const stepReview     = document.getElementById('step-review');
+const stepDone       = document.getElementById('step-done');
+const stepDashboard  = document.getElementById('step-dashboard');
 
 const scrapeForm   = document.getElementById('scrape-form');
 const urlInput     = document.getElementById('url-input');
@@ -27,9 +28,12 @@ const doneFolderPath = document.getElementById('done-folder-path');
 // Holds the scraped data between steps
 let scrapedData = null;
 
+// Active client for dashboard
+let activeDashClient = null;
+
 // ── Step transitions ─────────────────────────────────────
 function showStep(el) {
-  [stepScrape, stepReview, stepDone].forEach(s => {
+  [stepScrape, stepReview, stepDone, stepDashboard].forEach(s => {
     s.classList.add('hidden');
     s.classList.remove('active');
   });
@@ -80,7 +84,11 @@ async function loadClients() {
     }
     clients.forEach(name => {
       const li = document.createElement('li');
-      li.textContent = name;
+      const btn = document.createElement('button');
+      btn.className = 'client-btn';
+      btn.textContent = name;
+      btn.addEventListener('click', () => openClientDashboard(name));
+      li.appendChild(btn);
       clientsList.appendChild(li);
     });
   } catch {
@@ -256,6 +264,217 @@ restartBtn.addEventListener('click', () => {
   hideError(scrapeError);
   hideError(generateError);
   showStep(stepScrape);
+});
+
+// ── Dashboard ────────────────────────────────────────────
+
+async function openClientDashboard(folderName) {
+  activeDashClient = folderName;
+  showStep(stepDashboard);
+
+  // Clear previous content
+  document.getElementById('dash-business-name').textContent = folderName;
+  document.getElementById('dash-category-badge').textContent = '';
+  document.getElementById('dash-goals').innerHTML = '';
+  document.getElementById('dash-pillars').innerHTML = '';
+  document.getElementById('dash-schedule').innerHTML = '';
+  document.getElementById('dash-hooks').innerHTML = '';
+  document.getElementById('dash-ctas').innerHTML = '';
+  document.getElementById('dash-calendar').innerHTML = '';
+  document.getElementById('dash-calendar-empty').classList.remove('hidden');
+  document.getElementById('calendar-wrap').classList.add('hidden');
+
+  try {
+    const res  = await fetch(`/api/client/${encodeURIComponent(folderName)}`);
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to load client');
+
+    document.getElementById('dash-business-name').textContent      = data.businessName;
+    document.getElementById('dash-category-badge').textContent     = '';
+
+    // Goals
+    const goalsList = document.getElementById('dash-goals');
+    (data.goals || []).forEach(g => {
+      const li = document.createElement('li');
+      li.textContent = g;
+      goalsList.appendChild(li);
+    });
+
+    // Pillars
+    const pillarsEl = document.getElementById('dash-pillars');
+    (data.pillars || []).forEach(p => {
+      const chip = document.createElement('span');
+      chip.className = 'pillar-chip';
+      chip.title = p.desc || '';
+      chip.textContent = p.name;
+      pillarsEl.appendChild(chip);
+    });
+
+    // Populate pillar dropdown in calendar builder
+    const pillarSelect = document.getElementById('cal-pillar');
+    pillarSelect.innerHTML = '';
+    (data.pillars || []).forEach(p => {
+      const opt = document.createElement('option');
+      opt.value = p.name;
+      opt.textContent = p.name;
+      pillarSelect.appendChild(opt);
+    });
+    if (!data.pillars || data.pillars.length === 0) {
+      const opt = document.createElement('option');
+      opt.value = '';
+      opt.textContent = '—';
+      pillarSelect.appendChild(opt);
+    }
+
+    // Schedule
+    const schedBody = document.getElementById('dash-schedule');
+    (data.schedule || []).forEach(s => {
+      if (s.platform === '—') return; // skip rest day
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${s.day}</td><td>${s.platform}</td><td>${s.type}</td><td>${s.pillar}</td>`;
+      schedBody.appendChild(tr);
+    });
+
+    // Hook library
+    const hooksEl = document.getElementById('dash-hooks');
+    (data.hooks || []).forEach(h => {
+      hooksEl.appendChild(makeSelectableItem(h, 'hook'));
+    });
+    if (!data.hooks || data.hooks.length === 0) {
+      hooksEl.innerHTML = '<li class="muted">No hooks yet — add some to the strategy doc</li>';
+    }
+
+    // CTA bank
+    const ctasEl = document.getElementById('dash-ctas');
+    (data.ctas || []).forEach(c => {
+      ctasEl.appendChild(makeSelectableItem(c, 'cta'));
+    });
+    if (!data.ctas || data.ctas.length === 0) {
+      ctasEl.innerHTML = '<li class="muted">No CTAs yet — add some to the strategy doc</li>';
+    }
+
+    // Calendar
+    renderCalendar(data.calendar || []);
+
+  } catch (err) {
+    document.getElementById('dash-business-name').textContent = `Error: ${err.message}`;
+  }
+}
+
+function makeSelectableItem(text, field) {
+  const li  = document.createElement('li');
+  const btn = document.createElement('button');
+  btn.className = 'use-btn';
+  btn.textContent = 'Use';
+  btn.addEventListener('click', () => {
+    document.getElementById(field === 'hook' ? 'cal-hook' : 'cal-cta').value = text;
+    // Visual feedback
+    document.querySelectorAll('.use-btn.used').forEach(b => b.classList.remove('used'));
+    btn.classList.add('used');
+    btn.textContent = '✓ Used';
+    // Scroll to builder
+    document.querySelector('.cal-builder').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  });
+  const span = document.createElement('span');
+  span.textContent = text;
+  li.appendChild(btn);
+  li.appendChild(span);
+  return li;
+}
+
+function renderCalendar(entries) {
+  const tbody  = document.getElementById('dash-calendar');
+  const empty  = document.getElementById('dash-calendar-empty');
+  const wrap   = document.getElementById('calendar-wrap');
+
+  tbody.innerHTML = '';
+
+  const filled = entries.filter(e => e.date && e.platform && e.format);
+  if (filled.length === 0) {
+    empty.classList.remove('hidden');
+    wrap.classList.add('hidden');
+    return;
+  }
+
+  empty.classList.add('hidden');
+  wrap.classList.remove('hidden');
+
+  filled.forEach(e => {
+    const tr = document.createElement('tr');
+    const statusClass = `status-${(e.status || 'idea').toLowerCase().replace(/\s/g, '-')}`;
+    tr.innerHTML = [
+      `<td>${e.date}</td>`,
+      `<td>${e.platform}</td>`,
+      `<td>${e.format}</td>`,
+      `<td>${e.pillar}</td>`,
+      `<td>${e.hook}</td>`,
+      `<td>${e.cta}</td>`,
+      `<td class="${statusClass}">${e.status}</td>`,
+    ].join('');
+    tbody.appendChild(tr);
+  });
+}
+
+// Dashboard back button
+document.getElementById('dash-back-btn').addEventListener('click', () => {
+  activeDashClient = null;
+  showStep(stepScrape);
+});
+
+// Add to calendar
+document.getElementById('cal-add-btn').addEventListener('click', async () => {
+  const calError = document.getElementById('calendar-error');
+  hideError(calError);
+
+  if (!activeDashClient) return;
+
+  const entry = {
+    date:     document.getElementById('cal-date').value,
+    platform: document.getElementById('cal-platform').value,
+    format:   document.getElementById('cal-format').value,
+    pillar:   document.getElementById('cal-pillar').value,
+    hook:     document.getElementById('cal-hook').value.trim(),
+    cta:      document.getElementById('cal-cta').value.trim(),
+  };
+
+  if (!entry.date) {
+    showError(calError, 'Pick a date first');
+    return;
+  }
+
+  const btn = document.getElementById('cal-add-btn');
+  btn.disabled = true;
+  btn.textContent = 'Saving...';
+
+  try {
+    const res = await fetch(`/api/client/${encodeURIComponent(activeDashClient)}/calendar`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(entry),
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error || 'Could not save entry');
+
+    // Clear fields
+    document.getElementById('cal-date').value    = '';
+    document.getElementById('cal-hook').value    = '';
+    document.getElementById('cal-cta').value     = '';
+    document.querySelectorAll('.use-btn.used').forEach(b => {
+      b.classList.remove('used');
+      b.textContent = 'Use';
+    });
+
+    // Reload calendar from server
+    const clientRes  = await fetch(`/api/client/${encodeURIComponent(activeDashClient)}`);
+    const clientData = await clientRes.json();
+    renderCalendar(clientData.calendar || []);
+
+  } catch (err) {
+    showError(calError, err.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Add to Calendar';
+  }
 });
 
 // ── Init ─────────────────────────────────────────────────

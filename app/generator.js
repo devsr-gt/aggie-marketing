@@ -21,6 +21,118 @@ const CLIENTS_DIR = path.join(PROJECT_ROOT, 'clients');
 const TEMPLATE_DIR = path.join(CLIENTS_DIR, '_template');
 const CATEGORIES_DIR = path.join(PROJECT_ROOT, 'categories');
 
+// ── Category-specific strategy defaults ─────────────────────────────────────
+const CATEGORY_STRATEGY = {
+  contractors: {
+    goals: [
+      'Generate 5+ qualified service leads per month from social media',
+      'Build local brand awareness and trust in the service area',
+      'Establish credibility through before/after content and customer reviews',
+    ],
+    platforms: [
+      { name: 'Instagram', freq: '3×/week', format: 'Reels + Stories',  goal: 'Brand awareness & leads' },
+      { name: 'Facebook',  freq: '3×/week', format: 'Video + Posts',    goal: 'Local reach & booking'  },
+    ],
+    pillars: [
+      { name: 'Education',           desc: 'How-to tips, maintenance advice, DIY warnings',          example: '"3 signs your water heater is about to fail"' },
+      { name: 'Before & After',      desc: 'Job transformation photos and videos',                   example: '"We fixed this burst pipe in under 2 hours"' },
+      { name: 'Trust & Credibility', desc: 'Reviews, certifications, team intros',                   example: '"5-star review from [Neighborhood]"' },
+      { name: 'Seasonal / Urgency',  desc: 'Timely prompts tied to season or weather',               example: '"Is your AC ready for summer?"' },
+      { name: 'Local Connection',    desc: 'Community involvement, local landmarks, area references', example: '"Proud to serve the Carson Valley"' },
+    ],
+    schedule: [
+      { day: 'Monday',    platform: 'Instagram & Facebook', type: 'Reel',           pillar: 'Education' },
+      { day: 'Tuesday',   platform: 'Instagram',            type: 'Story',          pillar: 'Trust & Credibility' },
+      { day: 'Wednesday', platform: 'Instagram & Facebook', type: 'Reel',           pillar: 'Before & After' },
+      { day: 'Thursday',  platform: 'Facebook',             type: 'Post',           pillar: 'Seasonal / Urgency' },
+      { day: 'Friday',    platform: 'Instagram & Facebook', type: 'Reel',           pillar: 'Local Connection' },
+      { day: 'Saturday',  platform: 'Instagram',            type: 'Carousel / Post', pillar: 'Before & After' },
+      { day: 'Sunday',    platform: '—',                    type: '—',              pillar: '—' },
+    ],
+  },
+  retail: {
+    goals: [
+      'Drive foot traffic and in-store visits through social media promotions',
+      'Build an engaged local following that keeps the brand top of mind',
+      'Increase repeat purchases and customer loyalty',
+    ],
+    platforms: [
+      { name: 'Instagram', freq: '4×/week', format: 'Reels + Stories + Product', goal: 'Discover & shop' },
+      { name: 'Facebook',  freq: '3×/week', format: 'Posts + Events',            goal: 'Local reach & events' },
+    ],
+    pillars: [
+      { name: 'Product Spotlight', desc: 'Feature products with context and story',            example: '"Why our customers keep buying this"' },
+      { name: 'Behind the Scenes', desc: 'Store life, inventory updates, team moments',        example: '"New arrivals hitting the floor today"' },
+      { name: 'Social Proof',      desc: 'Customer photos, reviews, testimonials',             example: '"Look what [Customer] picked up this week"' },
+      { name: 'Education',         desc: 'How to use products, styling tips, care guides',     example: '"3 ways to style this for summer"' },
+      { name: 'Promotions',        desc: 'Sales, events, limited-time offers',                 example: '"This weekend only — 20% off everything"' },
+    ],
+    schedule: [
+      { day: 'Monday',    platform: 'Instagram',            type: 'Reel',  pillar: 'Product Spotlight' },
+      { day: 'Tuesday',   platform: 'Instagram',            type: 'Story', pillar: 'Behind the Scenes' },
+      { day: 'Wednesday', platform: 'Instagram & Facebook', type: 'Reel',  pillar: 'Education' },
+      { day: 'Thursday',  platform: 'Facebook',             type: 'Post',  pillar: 'Promotions' },
+      { day: 'Friday',    platform: 'Instagram & Facebook', type: 'Reel',  pillar: 'Social Proof' },
+      { day: 'Saturday',  platform: 'Instagram',            type: 'Story', pillar: 'Promotions' },
+      { day: 'Sunday',    platform: '—',                    type: '—',     pillar: '—' },
+    ],
+  },
+  restaurants: {
+    goals: [
+      'Drive reservations and walk-ins through mouth-watering visual content',
+      'Build a loyal local following and increase repeat visits',
+      'Showcase the dining experience, team, and behind-the-scenes story',
+    ],
+    platforms: [
+      { name: 'Instagram', freq: '5×/week', format: 'Reels + Stories + Food', goal: 'Discover & book' },
+      { name: 'Facebook',  freq: '3×/week', format: 'Events + Promotions',    goal: 'Local reach & reservations' },
+    ],
+    pillars: [
+      { name: 'Food Porn',          desc: 'Beautiful shots of dishes — the hero content',   example: '"This is our [dish] — yes it tastes as good as it looks"' },
+      { name: 'Behind the Kitchen', desc: 'Prep, plating, chef moments',                    example: '"Watch how we make our signature [dish] from scratch"' },
+      { name: 'Guest Experience',   desc: 'Ambiance, customer moments, reviews',            example: '"Date night done right 🍷" + customer tag' },
+      { name: 'Staff & Culture',    desc: 'Team intros, values, what makes you different',  example: '"Meet [Name], who has been making our [dish] for 10 years"' },
+      { name: 'Specials & Events',  desc: 'Weekly specials, seasonal menu, events',         example: '"Friday night special: [dish] — only 20 available"' },
+    ],
+    schedule: [
+      { day: 'Monday',    platform: 'Instagram',            type: 'Reel',   pillar: 'Behind the Kitchen' },
+      { day: 'Tuesday',   platform: 'Instagram & Facebook', type: 'Post',   pillar: 'Specials & Events' },
+      { day: 'Wednesday', platform: 'Instagram',            type: 'Reel',   pillar: 'Food Porn' },
+      { day: 'Thursday',  platform: 'Instagram & Facebook', type: 'Story',  pillar: 'Guest Experience' },
+      { day: 'Friday',    platform: 'Instagram & Facebook', type: 'Reel',   pillar: 'Specials & Events' },
+      { day: 'Saturday',  platform: 'Instagram',            type: 'Story',  pillar: 'Guest Experience' },
+      { day: 'Sunday',    platform: 'Facebook',             type: 'Post',   pillar: 'Staff & Culture' },
+    ],
+  },
+  default: {
+    goals: [
+      'Grow local brand awareness through consistent social media presence',
+      'Convert social media engagement into leads and sales',
+      'Build a loyal community of followers and repeat customers',
+    ],
+    platforms: [
+      { name: 'Instagram', freq: '3×/week', format: 'Reels + Stories', goal: 'Brand awareness & engagement' },
+      { name: 'Facebook',  freq: '3×/week', format: 'Posts + Video',   goal: 'Local reach & leads' },
+    ],
+    pillars: [
+      { name: 'Education',         desc: 'Tips, how-tos, and expert advice in your niche',  example: '"The #1 mistake our customers make"' },
+      { name: 'Trust',             desc: 'Reviews, testimonials, team, credentials',        example: '"5-star review from our last customer"' },
+      { name: 'Behind the Scenes', desc: 'Your process, your space, your team',             example: '"A day in the life at [Business]"' },
+      { name: 'Promotions',        desc: 'Offers, specials, seasonal campaigns',            example: '"This month only — [offer]"' },
+      { name: 'Local',             desc: 'Community involvement, local references',         example: '"Proud to serve [City] since [year]"' },
+    ],
+    schedule: [
+      { day: 'Monday',    platform: 'Instagram & Facebook', type: 'Reel',  pillar: 'Education' },
+      { day: 'Tuesday',   platform: 'Instagram',            type: 'Story', pillar: 'Trust' },
+      { day: 'Wednesday', platform: 'Instagram & Facebook', type: 'Reel',  pillar: 'Behind the Scenes' },
+      { day: 'Thursday',  platform: 'Facebook',             type: 'Post',  pillar: 'Promotions' },
+      { day: 'Friday',    platform: 'Instagram & Facebook', type: 'Reel',  pillar: 'Local' },
+      { day: 'Saturday',  platform: 'Instagram',            type: 'Story', pillar: 'Trust' },
+      { day: 'Sunday',    platform: '—',                    type: '—',     pillar: '—' },
+    ],
+  },
+};
+
 /**
  * Sanitizes a business name into a safe folder name.
  * Only allows lowercase letters, numbers, and hyphens.
@@ -109,6 +221,93 @@ async function getCategoryPlaybook(category) {
 }
 
 /**
+ * Parses bullet-list items from a markdown section.
+ * e.g. "## Hook Ideas\n- text\n- text2" → ["text", "text2"]
+ */
+function parseBullets(text, heading) {
+  const re = new RegExp(`## ${heading}[\\s\\S]*?\n((?:- [^\n]+\n?)+)`);
+  const match = text.match(re);
+  if (!match) return [];
+  return match[1]
+    .split('\n')
+    .filter(l => l.startsWith('- '))
+    .map(l => l.replace(/^- /, '').replace(/^"|"$/g, '').trim())
+    .filter(Boolean);
+}
+
+/**
+ * Builds a fully populated strategy markdown document from scraped data + playbook.
+ */
+function buildStrategyMarkdown(scraped, playbookText) {
+  const { businessName, category } = scraped;
+  const month = new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  const cfg = CATEGORY_STRATEGY[category] || CATEGORY_STRATEGY.default;
+
+  // Pull hooks + CTAs from playbook; fall back to empty list
+  const hooks = parseBullets(playbookText, 'Hook Ideas');
+  const ctas  = parseBullets(playbookText, 'CTA Ideas');
+
+  const goalsText = cfg.goals.map((g, i) => `${i + 1}. ${g}`).join('\n');
+
+  const platformsText = cfg.platforms
+    .map(p => `| ${p.name} | ${p.freq} | ${p.format} | ${p.goal} |`)
+    .join('\n');
+
+  const pillarsText = cfg.pillars
+    .map((p, i) => `| ${i + 1}. ${p.name} | ${p.desc} | ${p.example} |`)
+    .join('\n');
+
+  const hookList = hooks.length > 0
+    ? hooks.map(h => `- ${h}`).join('\n')
+    : '- (Add hooks — see category playbook)';
+
+  const ctaList = ctas.length > 0
+    ? ctas.map(c => `- ${c}`).join('\n')
+    : '- (Add CTAs — see category playbook)';
+
+  const scheduleText = cfg.schedule
+    .map(s => `| ${s.day} | ${s.platform} | ${s.type} | ${s.pillar} |`)
+    .join('\n');
+
+  return `# Content Strategy — ${businessName}
+*Auto-generated ${month} from website scan. Review and customize with discovery call.*
+
+## Goals for This Client
+${goalsText}
+
+## Platforms
+| Platform | Posting Frequency | Content Format | Primary Goal |
+|---|---|---|---|
+${platformsText}
+
+## Content Pillars
+Define 3–5 recurring content themes that cover both brand recognition and conversion.
+
+| Pillar | Description | Example |
+|---|---|---|
+${pillarsText}
+
+## Hook Library
+Running list of proven hooks to test and reuse.
+
+${hookList}
+
+## CTA Bank
+Standard CTAs for this client — rotate to avoid fatigue.
+
+${ctaList}
+
+## Posting Schedule
+| Day | Platform | Content Type | Pillar |
+|---|---|---|---|
+${scheduleText}
+
+## Monthly Focus
+<!-- What is the promotional or seasonal focus this month? -->
+`;
+}
+
+/**
  * Appends pre-filled onboarding data to the client's onboarding doc.
  */
 async function prefillOnboarding(clientDir, scraped) {
@@ -137,24 +336,12 @@ async function prefillOnboarding(clientDir, scraped) {
 }
 
 /**
- * Appends category playbook hints to the strategy doc.
+ * Writes a fully populated strategy document, replacing the blank template.
  */
 async function prefillStrategy(clientDir, scraped) {
   const strategyPath = path.join(clientDir, '02-strategy', 'README.md');
   const playbook = await getCategoryPlaybook(scraped.category);
-
-  if (!playbook) return;
-
-  let content = await fs.readFile(strategyPath, 'utf8');
-  content += `\n---\n\n## Category Playbook Reference — ${scraped.category}\n\n`;
-
-  // Extract just the hooks and CTAs sections from the playbook
-  const hookMatch = playbook.match(/## Hook Ideas[\s\S]*?(?=##|$)/);
-  const ctaMatch = playbook.match(/## CTA Ideas[\s\S]*?(?=##|$)/);
-
-  if (hookMatch) content += hookMatch[0] + '\n';
-  if (ctaMatch) content += ctaMatch[0] + '\n';
-
+  const content = buildStrategyMarkdown(scraped, playbook || '');
   await fs.writeFile(strategyPath, content, 'utf8');
 }
 

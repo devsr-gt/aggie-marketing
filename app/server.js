@@ -157,6 +157,186 @@ app.post('/api/generate', async (req, res) => {
   }
 });
 
+/**
+ * Parses numbered goal lines from a strategy markdown doc.
+ * e.g. "1. Generate leads" → ["Generate leads"]
+ */
+function parseGoals(markdown) {
+  const match = markdown.match(/## Goals for This Client\n([\s\S]*?)(?=\n##|$)/);
+  if (!match) return [];
+  return match[1]
+    .split('\n')
+    .filter(l => /^\d+\./.test(l.trim()))
+    .map(l => l.replace(/^\d+\.\s*/, '').trim())
+    .filter(Boolean);
+}
+
+/**
+ * Parses the Content Pillars table from a strategy markdown doc.
+ */
+function parsePillars(markdown) {
+  const match = markdown.match(/## Content Pillars[\s\S]*?\| Pillar \|([\s\S]*?)(?=\n##|$)/);
+  if (!match) return [];
+  return match[1]
+    .split('\n')
+    .filter(l => l.startsWith('|') && !l.includes('---') && !l.includes('Pillar |'))
+    .map(row => {
+      const parts = row.split('|').map(s => s.trim()).filter(Boolean);
+      return { name: parts[0] || '', desc: parts[1] || '', example: parts[2] || '' };
+    })
+    .filter(p => p.name);
+}
+
+/**
+ * Parses the Posting Schedule table from a strategy markdown doc.
+ */
+function parseSchedule(markdown) {
+  const match = markdown.match(/## Posting Schedule[\s\S]*?\| Day \|([\s\S]*?)(?=\n##|$)/);
+  if (!match) return [];
+  return match[1]
+    .split('\n')
+    .filter(l => l.startsWith('|') && !l.includes('---') && !l.includes('Day |'))
+    .map(row => {
+      const parts = row.split('|').map(s => s.trim()).filter(Boolean);
+      return { day: parts[0] || '', platform: parts[1] || '', type: parts[2] || '', pillar: parts[3] || '' };
+    })
+    .filter(s => s.day);
+}
+
+/**
+ * Parses the Content Calendar table from a calendar markdown doc.
+ */
+function parseCalendar(markdown) {
+  const match = markdown.match(/## Content Schedule[\s\S]*?\| Date \|([\s\S]*?)(?=\n##|$)/);
+  if (!match) return [];
+  return match[1]
+    .split('\n')
+    .filter(l => l.startsWith('|') && !l.includes('---') && !l.includes('Date |'))
+    .map(row => {
+      const parts = row.split('|').map(s => s.trim()).filter(Boolean);
+      return {
+        date:     parts[0] || '',
+        platform: parts[1] || '',
+        format:   parts[2] || '',
+        pillar:   parts[3] || '',
+        hook:     parts[4] || '',
+        caption:  parts[5] || '',
+        cta:      parts[6] || '',
+        status:   parts[7] || '',
+        notes:    parts[8] || '',
+      };
+    })
+    .filter(c => c.date && c.date !== '');
+}
+
+/**
+ * GET /api/client/:name
+ * Returns structured dashboard data for a client.
+ */
+app.get('/api/client/:name', async (req, res) => {
+  const { name } = req.params;
+
+  // Only allow safe folder names
+  if (!/^[a-z0-9-]+$/.test(name)) {
+    return res.status(400).json({ error: 'Invalid client name' });
+  }
+
+  const CLIENTS_DIR = path.join(__dirname, '..', 'clients');
+  const clientDir   = path.join(CLIENTS_DIR, name);
+
+  // Path traversal guard
+  if (!clientDir.startsWith(CLIENTS_DIR + path.sep)) {
+    return res.status(400).json({ error: 'Invalid client name' });
+  }
+
+  try { await fs.access(clientDir); }
+  catch { return res.status(404).json({ error: 'Client not found' }); }
+
+  try {
+    const readMd = async (relPath) => {
+      try { return await fs.readFile(path.join(clientDir, relPath), 'utf8'); }
+      catch { return ''; }
+    };
+
+    const strategyMd = await readMd('02-strategy/README.md');
+    const calendarMd = await readMd('03-content-calendar/README.md');
+
+    // Extract business name from the strategy doc heading
+    const nameMatch    = strategyMd.match(/^# Content Strategy — (.+)$/m);
+    const businessName = nameMatch ? nameMatch[1].trim() : name;
+
+    res.json({
+      folderName: name,
+      businessName,
+      goals:    parseGoals(strategyMd),
+      pillars:  parsePillars(strategyMd),
+      hooks:    parseSection(strategyMd, 'Hook Library'),
+      ctas:     parseSection(strategyMd, 'CTA Bank'),
+      schedule: parseSchedule(strategyMd),
+      calendar: parseCalendar(calendarMd),
+    });
+  } catch (err) {
+    console.error('[/api/client/:name]', err.message);
+    res.status(500).json({ error: 'Could not read client data' });
+  }
+});
+
+/**
+ * POST /api/client/:name/calendar
+ * Body: { date, platform, format, pillar, hook, cta }
+ * Appends a new entry to the client's content calendar.
+ */
+app.post('/api/client/:name/calendar', async (req, res) => {
+  const { name } = req.params;
+
+  if (!/^[a-z0-9-]+$/.test(name)) {
+    return res.status(400).json({ error: 'Invalid client name' });
+  }
+
+  const { date, platform, format, pillar, hook, cta } = req.body;
+
+  if (!date || !platform || !format) {
+    return res.status(400).json({ error: 'date, platform, and format are required' });
+  }
+
+  const CLIENTS_DIR  = path.join(__dirname, '..', 'clients');
+  const calendarPath = path.join(CLIENTS_DIR, name, '03-content-calendar', 'README.md');
+
+  if (!calendarPath.startsWith(CLIENTS_DIR + path.sep)) {
+    return res.status(400).json({ error: 'Invalid client name' });
+  }
+
+  try {
+    let content = await fs.readFile(calendarPath, 'utf8');
+
+    // Sanitize all fields — strip | to protect markdown table structure
+    const s = (v) => (v || '').replace(/\|/g, '').trim();
+    const row = `| ${s(date)} | ${s(platform)} | ${s(format)} | ${s(pillar)} | ${s(hook)} | | ${s(cta)} | Idea | |`;
+
+    // Insert after the last | row in the Content Schedule table
+    const lines = content.split('\n');
+    const headerIdx = lines.findIndex(l => l.startsWith('| Date | Platform'));
+
+    if (headerIdx > -1) {
+      let lastDataIdx = headerIdx + 1; // default: right after separator
+      for (let i = headerIdx + 2; i < lines.length; i++) {
+        if (lines[i].startsWith('|')) lastDataIdx = i;
+        else if (i > headerIdx + 2) break; // stop after first non-| following data rows
+      }
+      lines.splice(lastDataIdx + 1, 0, row);
+      content = lines.join('\n');
+    } else {
+      content += '\n' + row + '\n';
+    }
+
+    await fs.writeFile(calendarPath, content, 'utf8');
+    res.json({ success: true });
+  } catch (err) {
+    console.error('[/api/client/:name/calendar]', err.message);
+    res.status(500).json({ error: 'Could not update calendar' });
+  }
+});
+
 // -----------------------------------------------------------------------
 // Start
 // -----------------------------------------------------------------------

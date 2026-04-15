@@ -157,6 +157,122 @@
       <button type="button" id="restart-btn">Add Another Client</button>
     </section>
 
+    <!-- ── Dashboard: Client Plan ───────────────────────────────── -->
+    <section id="step-dashboard" class="card step hidden">
+
+      <div class="dash-topbar">
+        <button type="button" id="dash-back-btn" class="secondary">← Clients</button>
+        <div class="dash-title">
+          <h2 id="dash-business-name"></h2>
+          <span id="dash-category-badge" class="badge"></span>
+        </div>
+      </div>
+
+      <!-- Goals -->
+      <div class="dash-section">
+        <h3 class="dash-heading">Goals</h3>
+        <ol id="dash-goals" class="dash-goals"></ol>
+      </div>
+
+      <!-- Content Pillars -->
+      <div class="dash-section">
+        <h3 class="dash-heading">Content Pillars</h3>
+        <div id="dash-pillars" class="pillar-chips"></div>
+      </div>
+
+      <!-- Posting Schedule -->
+      <div class="dash-section">
+        <h3 class="dash-heading">Posting Schedule</h3>
+        <table class="schedule-table">
+          <thead>
+            <tr><th>Day</th><th>Platform</th><th>Format</th><th>Pillar</th></tr>
+          </thead>
+          <tbody id="dash-schedule"></tbody>
+        </table>
+      </div>
+
+      <!-- Hooks + CTAs side by side -->
+      <div class="dash-two-col">
+
+        <div class="dash-panel">
+          <h3 class="dash-heading">Hook Library <span class="hint-inline">click to use</span></h3>
+          <ul id="dash-hooks" class="selectable-list"></ul>
+        </div>
+
+        <div class="dash-panel">
+          <h3 class="dash-heading">CTA Bank <span class="hint-inline">click to use</span></h3>
+          <ul id="dash-ctas" class="selectable-list"></ul>
+        </div>
+
+      </div>
+
+      <!-- Content Calendar Builder -->
+      <div class="dash-section">
+        <h3 class="dash-heading">Add to Content Calendar</h3>
+        <div id="calendar-error" class="error-msg hidden"></div>
+        <div class="cal-builder">
+          <div class="cal-row">
+            <div class="field">
+              <label for="cal-date">Date</label>
+              <input id="cal-date" type="date" />
+            </div>
+            <div class="field">
+              <label for="cal-platform">Platform</label>
+              <select id="cal-platform">
+                <option>Instagram</option>
+                <option>Facebook</option>
+                <option>Instagram &amp; Facebook</option>
+                <option>TikTok</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="cal-format">Format</label>
+              <select id="cal-format">
+                <option>Reel</option>
+                <option>Story</option>
+                <option>Post</option>
+                <option>Carousel</option>
+                <option>Video</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="cal-pillar">Pillar</label>
+              <select id="cal-pillar"></select>
+            </div>
+          </div>
+          <div class="cal-row">
+            <div class="field full">
+              <label for="cal-hook">Hook <span class="hint-inline">auto-filled when you click a hook above</span></label>
+              <textarea id="cal-hook" rows="2" placeholder="Paste or type the hook..."></textarea>
+            </div>
+            <div class="field full">
+              <label for="cal-cta">CTA <span class="hint-inline">auto-filled when you click a CTA above</span></label>
+              <textarea id="cal-cta" rows="2" placeholder="Paste or type the CTA..."></textarea>
+            </div>
+          </div>
+          <button type="button" id="cal-add-btn">Add to Calendar</button>
+        </div>
+      </div>
+
+      <!-- Calendar Entries -->
+      <div class="dash-section">
+        <h3 class="dash-heading">Content Calendar</h3>
+        <div id="calendar-wrap" class="calendar-scroll">
+          <table class="calendar-table">
+            <thead>
+              <tr>
+                <th>Date</th><th>Platform</th><th>Format</th><th>Pillar</th>
+                <th>Hook</th><th>CTA</th><th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="dash-calendar"></tbody>
+          </table>
+        </div>
+        <p id="dash-calendar-empty" class="muted">No calendar entries yet — add one above.</p>
+      </div>
+
+    </section>
+
   </main>
 
   <script src="app.js"></script>
