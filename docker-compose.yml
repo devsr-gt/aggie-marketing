@@ -2,7 +2,6 @@ services:
   app:
     build:
       context: ./app        # build from the app/ subdirectory (where Dockerfile lives)
-    image: aggie-marketing-app
     container_name: aggie-marketing
 
     # Only expose on localhost — invisible to your Wi-Fi/LAN

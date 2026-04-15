@@ -1,7 +1,7 @@
 {
   "name": "aggie-marketing-app",
-  "version": "1.0.0",
-  "description": "Client onboarding tool for Aggie Marketing — local use only",
+  "version": "1.0.1",
+  "description": "Client onboarding tool for Aggie Marketing \u2014 local use only",
   "main": "server.js",
   "type": "module",
   "engines": {

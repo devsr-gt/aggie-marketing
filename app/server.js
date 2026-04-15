@@ -3,7 +3,8 @@
  * Express 5 server for the Aggie Marketing client onboarding tool.
  *
  * Security:
- *  - Bound to 127.0.0.1 only (localhost, never externally reachable)
+ *  - Bound to 0.0.0.0 inside Docker; host-side restriction is enforced by
+ *    docker-compose (ports: "127.0.0.1:3000:3000") — unreachable from the network
  *  - Helmet sets all HTTP security headers
  *  - URL validation and path sanitization happen in scraper/generator modules
  *  - Request body size capped at 2kb (no large payload attacks)
@@ -21,7 +22,9 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const app = express();
 const PORT = 3000;
-const HOST = '127.0.0.1'; // local only — never bind to 0.0.0.0
+// Inside Docker, bind to all container interfaces so the host port mapping works.
+// The actual host-side restriction (127.0.0.1 only) is enforced in docker-compose.yml.
+const HOST = process.env.BIND_HOST ?? '0.0.0.0';
 
 // --- Security middleware ---
 app.use(helmet({
